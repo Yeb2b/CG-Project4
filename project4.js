@@ -24,8 +24,7 @@ var materialAmbient, materialDiffuse, materialSpecular;
 var materialShininess;
 
 var castleW = 110;
-var gateTowerW = 40;
-var gateTowerH = 60;
+
 
 var index = 0;
 var va = vec4(0.0, 0.0, -1.0,1);
@@ -33,13 +32,6 @@ var vb = vec4(0.0, 0.942809, 0.333333, 1);
 var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 var vd = vec4(0.816497, -0.471405, 0.333333,1);
 
-var gateAnim = false;
-var gateMov = 0;
-var gateDir = 1;
-var gateStep = (gateTowerH / 2) / 300;
-var flagAnim = false;
-var flagDir = 1;
-var flagMov = 0;
 
 var y_max =10;
 var y_min = -10;
@@ -87,7 +79,7 @@ function main()
     tetrahedron(va, vb, vc, vd, 3,vec4(0,0,0,1) ); //+12,288
     console.log(points.length);
     console.log(colors.length);
-    GenerateBuilding(vec4(1,0,0,1) );
+    GenerateHouse(vec4(1,0,0,1) );
     //GenerateCube(8, 8,vec4(1,0,0,1)) ; //600-636 +36
     //tetrahedron(va, vb, vc, vd, 5); //+12,288
     /*
@@ -111,21 +103,8 @@ function main()
     console.log(points.length);
     GenerateBuilding();//1838-1884
     console.log(points.length);
-    /*
-    GenerateTower();
-    GenerateCube(15, 3); // side and back walls
-    GenerateCube(0.5, 0.5); // parapet
-    GenerateCube(0.33, 0.33); // parapet gap
-    GenerateCube(6, 3); // front walls
-    GenerateGateTower();
-    GenerateCube(1.1 * gateTowerW / 15, 0.1 * gateTowerH / 15); // top of gate tower
-    GenerateCube(0.33, 0.33);
-    GenerateCube(0.33, 0.16);
-    GenerateCube(1, 1); // portcullis bars
-    GenerateBuilding();
-    GenerateFlag();
     */
-    SendData();
+    init();
     
     projectionMatrixLoc = gl.getUniformLocation(program, "projectionMatrix");
     modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
@@ -393,31 +372,6 @@ function quad(a, b, c, d, ox, oy, rx, ry, color)
         normals.push(normal);
 }
 
-function altQuad(a, b, c, d)
-{
-    points.push(a);
-    points.push(b);
-    points.push(c);
-    points.push(a);
-    points.push(c);
-    points.push(d);
-
-    var rx = gateTowerW/15;
-    var ry = gateTowerH/15;
-    textureCoordsArray.push(vec2(rx * a[0], ry * a[1]));
-    textureCoordsArray.push(vec2(rx * b[0], ry * b[1]));
-    textureCoordsArray.push(vec2(rx * c[0], ry * c[1]));
-    textureCoordsArray.push(vec2(rx * a[0], ry * a[1]));
-    textureCoordsArray.push(vec2(rx * c[0], ry * c[1]));
-    textureCoordsArray.push(vec2(rx * d[0], ry * d[1]));
-
-    var t1 = subtract(b, a);
-    var t2 = subtract(d, a);
-    var normal = normalize(vec3(cross(t1, t2)));
-    for (var i = 0; i < 6; i++)
-        normals.push(normal);
-}
-
 function triangle(a, b, c,color)
 {
     points.push(a);
@@ -517,74 +471,7 @@ function pentagon(a, b, c, d, e, color)
         normals.push(normal);
 }
 
-function GenerateTower()
-{
-    var tower = [
-        vec4(0, -0.5, 0, 1),
-        vec4(0.25, -0.5, 0, 1),
-        vec4(0.25, 0.25, 0, 1),
-        vec4(0.30, 0.25, 0, 1),
-        vec4(0, 0.5, 0, 1)
-    ];
-    var slices = 100;
-    var prev1, prev2;
-    var curr1, curr2;
-    var offset = 0;
-
-    for (var i = 0; i < 4; i++)
-    {
-        prev1 = tower[i];
-        prev2 = tower[i+1];
-        var r = rotate(360 / slices, 0, 1, 0);
-        for (var j = 1; j <= slices; j++)
-        {
-            curr1 = multiply(r, prev1);
-            curr2 = multiply(r, prev2);
-            quad(prev1, prev2, curr2, curr1, offset, 0, 0.05, 3);
-            prev1 = curr1;
-            prev2 = curr2;
-            offset += 0.05;
-        }
-    }
-}
-
-function GenerateGateTower()
-{
-    var GateTower = [
-        vec4(-0.25, -0.5, 0.5, 1),
-        vec4(-0.5, -0.5, 0.5, 1),
-        vec4(-0.5, 0.5, 0.5, 1),
-        vec4(0.5, 0.5, 0.5, 1),
-        vec4(0.5, -0.5, 0.5, 1),
-        vec4(0.25, -0.5, 0.5, 1)
-    ];
-    var slices = 45;
-    var length;
-    var step = Math.PI / slices;
-    for (var i = 0; i <= slices; i++)
-        GateTower.push(vec4(0.25*Math.cos(i*step), 0.25*Math.sin(i*step) - 0.25, 0.5, 1));
-    var numPoints = GateTower.length;
-    for (i = 0; i < numPoints; i++)
-        GateTower.push(vec4(GateTower[i][0], GateTower[i][1], GateTower[i][2] - 1));
-    for (i = 0; i < numPoints - 1 ; i++)
-    {
-        length = Math.sqrt(Math.pow(GateTower[i+1][0] - GateTower[i][0], 2) +
-            Math.pow(GateTower[i+1][1] - GateTower[i][1], 2));
-        quad(GateTower[i], GateTower[i + 1], GateTower[i + 1 + numPoints], GateTower[i + numPoints],
-            0, 0, gateTowerW/15, 4 * length);
-    }
-    quad(GateTower[51], GateTower[0], GateTower[52], GateTower[103], 0, 0, gateTowerW/15, 1);
-
-    altQuad(GateTower[2], GateTower[1], GateTower[0], GateTower[51]);
-    for (i = 51; i > 29; i -= 2)
-        altQuad(GateTower[2], GateTower[i], GateTower[i-1], GateTower[i-2]);
-    altQuad(GateTower[2], GateTower[29], GateTower[28], GateTower[3]);
-    for (i = 28; i > 6; i -= 2)
-        altQuad(GateTower[3], GateTower[i], GateTower[i-1], GateTower[i-2]);
-    altQuad(GateTower[3], GateTower[6], GateTower[5], GateTower[4]);
-}
-
-function GenerateBuilding(color)
+function GenerateHouse(color)
 {
     var Building = [
         vec4(0, 0.5, 0.5, 1),
@@ -607,28 +494,7 @@ function GenerateBuilding(color)
     pentagon(Building[5], Building[6], Building[7], Building[8], Building[9],color); // back face
 }
 
-function GenerateFlag()
-{
-    var Flag = [
-        vec4(-0.05, 0.5, 0.05, 1),
-        vec4(-0.05, -0.5, 0.05, 1),
-        vec4(0.05, -0.5, 0.05, 1),
-        vec4(0.05, 0.3, 0.05, 1),
-        vec4(0.5, 0.4, 0.05, 1),
-        vec4(0.05, 0.5, 0.05, 1)
-    ];
-    for (var i = 0; i < 6; i++)
-        Flag.push(vec4(Flag[i][0], Flag[i][1], -0.05, 1));
-    for (i = 0; i < 5; i++)
-        quad(Flag[i+6], Flag[i+7], Flag[i+1], Flag[i], 0, 0, 1, 1);
-    quad(Flag[11], Flag[6], Flag[0], Flag[5]);
-    quad(Flag[0], Flag[1], Flag[2], Flag[5], 0, 0, 1, 1);
-    quad(Flag[11], Flag[8], Flag[7], Flag[6], 0, 0, 1, 1);
-    triangle(Flag[3], Flag[4], Flag[5]);
-    triangle(Flag[11], Flag[10], Flag[9]);
-}
-
-function SendData()
+function init()
 {
     /*
     var vNormal = gl.getAttribLocation(program, "vNormal");
@@ -727,7 +593,7 @@ function render()
     gl.enable(gl.DEPTH_TEST); 
     DrawGround();
     //drawCylinder();
-    DrawBuilding(100, 80, 120, 0, 0,-80);
+    //DrawHouse(100, 80, 120, 0, 0,-80);
     //DrawBuilding(72, 80, 60, 0, 0, 70);
     //DrawTower(10, 80, 40, 40);
     //drawCone();
@@ -737,20 +603,6 @@ function render()
     //DrawBuilding();
     //DrawSolidSphere(10);
     /*
-    DrawTower(20, 60, castleW, castleW);
-    DrawTower(20, 60, castleW, -castleW);
-    DrawTower(20, 60, -castleW, castleW);
-    DrawTower(20, 60, -castleW, -castleW);
-
-    DrawWall(38, 10, 2*castleW, 0, 0, 0);
-    DrawWall(38, 10, 2*castleW, 1, 0, 0);
-    DrawWall(38, 10, 2*castleW, 2, 0, 0);
-
-    var frontL = castleW - gateTowerW/2;
-    DrawWall(38, 10, frontL, -1, castleW - frontL/2, 108);
-    DrawWall(38, 10, frontL, -1, -(castleW - frontL/2), 108);
-    DrawGateTower(gateTowerW, gateTowerH);
-
     if (gateAnim) {
         if (gateMov < 0 || gateMov > 210) {
             gateDir *= -1;
@@ -828,174 +680,8 @@ function DrawSky(){
     modelViewMatrix = modelViewStack.pop();
     gl.drawArrays(gl.TRIANGLES, 36, 72);
 }
-function DrawTower(d, h, x, z)
-{
-    lightAmbient = vec4(0.4, 0.4, 0.4, 1);
-    lightDiffuse = vec4(1, 1, 1, 1);
-    lightSpecular = vec4(1, 1, 1, 1);
-    materialAmbient = vec4(0.2, 0.2, 0.2, 1);
-    materialDiffuse = vec4(0.4, 0.4, 0.4, 1);
-    materialSpecular = vec4(0.6, 0.6, 0.6, 1);
-    materialShininess = 9;
-    //SetupLightingMaterial();
 
-    modelViewStack.push(modelViewMatrix);
-    var s = scale4(2*d, h, 2*d);
-    var t = translate(x, h/2, z);
-    modelViewMatrix = mult(mult(modelViewMatrix, t), s);
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    modelViewMatrix = modelViewStack.pop();
-
-    //gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
-    gl.drawArrays(gl.TRIANGLES, 36, 1800); //cylinder
-    //gl.uniform1i(gl.getUniformLocation(program, "texture"), 2);
-    gl.drawArrays(gl.TRIANGLES, 1836, 600); //cone
-}
-
-function DrawWall(h, w, l, turns, z, offset)
-{
-    lightAmbient = vec4(0.4, 0.4, 0.4, 1);
-    lightDiffuse = vec4(1, 1, 1, 1);
-    lightSpecular = vec4(1, 1, 1, 1);
-    materialAmbient = vec4(0.2, 0.2, 0.2, 1);
-    materialDiffuse = vec4(0.4, 0.4, 0.4, 1);
-    materialSpecular = vec4(0.6, 0.6, 0.6, 1);
-    materialShininess = 9;
-    SetupLightingMaterial();
-
-    modelViewStack.push(modelViewMatrix);
-    var s = scale4(w, h, l);
-    var r = rotate(turns * 90, 0, 1, 0);
-    var t = translate(castleW, h/2, z);
-    modelViewMatrix = mult(mult(mult(modelViewMatrix, r), t), s);
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    modelViewMatrix = modelViewStack.pop();
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
-    gl.drawArrays(gl.TRIANGLES, 2436 + offset, 36);
-
-    var parapetH = 5;
-    var parapetLowH = 3;
-    var parapetW = 1;
-    var parapetL = 10;
-    var parapetGapL = 4;
-    for (var i = 0; i < l/parapetL; i++)
-    {
-        modelViewStack.push(modelViewMatrix);
-        s = scale4(parapetW, parapetH, parapetL - parapetGapL);
-        t = translate(castleW + w/2 - parapetW/2, h + parapetH/2,
-            z - l/2 + (parapetL - parapetGapL)/2 + i*parapetL);
-        modelViewMatrix = mult(mult(mult(modelViewMatrix, r), t), s);
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-        modelViewMatrix = modelViewStack.pop();
-        gl.drawArrays(gl.TRIANGLES, 2472, 36);
-
-        modelViewStack.push(modelViewMatrix);
-        s = scale4(parapetW, parapetLowH, parapetGapL);
-        t = translate(castleW + w/2 - parapetW/2, h + parapetLowH/2,
-            z - l/2 + parapetL - parapetGapL/2 + i*parapetL);
-        modelViewMatrix = mult(mult(mult(modelViewMatrix, r), t), s);
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-        modelViewMatrix = modelViewStack.pop();
-        gl.drawArrays(gl.TRIANGLES, 2508, 36);
-    }
-}
-
-function DrawGateTower(w, h)
-{
-    lightAmbient = vec4(0.4, 0.4, 0.4, 1);
-    lightDiffuse = vec4(1, 1, 1, 1);
-    lightSpecular = vec4(1, 1, 1, 1);
-    materialAmbient = vec4(0.2, 0.2, 0.2, 1);
-    materialDiffuse = vec4(0.4, 0.4, 0.4, 1);
-    materialSpecular = vec4(0.6, 0.6, 0.6, 1);
-    materialShininess = 9;
-    SetupLightingMaterial();
-
-    modelViewStack.push(modelViewMatrix);
-    var s = scale4(w, h, w);
-    var t1 = translate(0, h/2, castleW);
-    modelViewMatrix = mult(mult(modelViewMatrix, t1), s);
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    modelViewMatrix = modelViewStack.pop();
-    gl.drawArrays(gl.TRIANGLES, 2580, 462);
-
-    modelViewStack.push(modelViewMatrix);
-    var r = rotate(180, 0, 1, 0);
-    modelViewMatrix = mult(mult(mult(modelViewMatrix, t1), r), s);
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    modelViewMatrix = modelViewStack.pop();
-    gl.drawArrays(gl.TRIANGLES, 2892, 150);
-
-    modelViewStack.push(modelViewMatrix);
-    s = scale4(1.1 * w, 0.1 * h, 1.1 * w);
-    t1 = translate(0, 1.05*h, castleW);
-    modelViewMatrix = mult(mult(modelViewMatrix, t1), s);
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    modelViewMatrix = modelViewStack.pop();
-    gl.drawArrays(gl.TRIANGLES, 3042, 36);
-
-    var t2;
-    for (var i = 0; i < 4; i++)
-    {
-        r = rotate(i * 90, 0, 1, 0);
-        for (var j = 0; j <5; j++)
-        {
-            modelViewStack.push(modelViewMatrix);
-            s = scale4(w/10 , h/10, w/10);
-            t1 = translate(w/2, 0, -w/2 + j * w/5);
-            t2 = translate(0, 1.15 * h, castleW);
-            modelViewMatrix = mult(mult(mult(mult(modelViewMatrix, t2), r), t1), s);
-            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-            modelViewMatrix = modelViewStack.pop();
-            gl.drawArrays(gl.TRIANGLES, 3078, 36);
-
-            modelViewStack.push(modelViewMatrix);
-            s = scale4(w/10, h/20, w/10);
-            t1 = translate(w/2, 0, -0.4 * w + j * w/5);
-            t2 = translate(0, 1.125 * h, castleW);
-            modelViewMatrix = mult(mult(mult(mult(modelViewMatrix, t2), r), t1), s);
-            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-            modelViewMatrix = modelViewStack.pop();
-            gl.drawArrays(gl.TRIANGLES, 3114, 36);
-        }
-    }
-}
-
-function DrawPortcullis(w, h)
-{
-    lightAmbient = vec4(0.1, 0.1, 0.1, 1);
-    lightDiffuse = vec4(0.4, 0.4, 0.4, 1);
-    lightSpecular = vec4(0.2, 0.2, 0.2, 1);
-    materialAmbient = vec4(0.2, 0.2, 0.2, 1);
-    materialDiffuse = vec4(0.4, 0.4, 0.4, 1);
-    materialSpecular = vec4(1, 1, 1, 1);
-    materialShininess = 9;
-    SetupLightingMaterial();
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), 3);
-
-    var s = scale4(w/30, h, w/60);
-    for (var i = 1; i < 10; i++)
-    {
-        modelViewStack.push(modelViewMatrix);
-        var t = translate(-w/2 + i * w/10, h/2 + gateMov*gateStep, castleW);
-        modelViewMatrix = mult(mult(modelViewMatrix, t), s);
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-        modelViewMatrix = modelViewStack.pop();
-        gl.drawArrays(gl.TRIANGLES, 3150, 36);
-    }
-    s = scale4(w, w/30, w/60);
-    for (i = 1; i < 12; i++)
-    {
-        modelViewStack.push(modelViewMatrix);
-        t = translate(0, i * h/12 + gateMov*gateStep, castleW);
-        modelViewMatrix = mult(mult(modelViewMatrix, t), s);
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-        modelViewMatrix = modelViewStack.pop();
-        gl.drawArrays(gl.TRIANGLES, 3150, 36);
-    }
-}
-
-function DrawBuilding(h, w, l, x, y, z)
+function DrawHouse(h, w, l, x, y, z)
 {
     lightAmbient = vec4(0.4, 0.4, 0.4, 1);
     lightDiffuse = vec4(1, 1, 1, 1);
@@ -1017,52 +703,6 @@ function DrawBuilding(h, w, l, x, y, z)
     gl.drawArrays(gl.TRIANGLES, 3912, 12);
    // gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
     gl.drawArrays(gl.TRIANGLES, 3924, 36);
-}
-
-function DrawBanner()
-{
-    lightAmbient = vec4(0.4, 0.4, 0.4, 1);
-    lightDiffuse = vec4(1, 1, 1, 1);
-    lightSpecular = vec4(1, 1, 1, 1);
-    materialAmbient = vec4(0.2, 0.2, 0.2, 1);
-    materialDiffuse = vec4(0.4, 0.4, 0.4, 1);
-    materialSpecular = vec4(0.6, 0.6, 0.6, 1);
-    materialShininess = 9;
-    SetupLightingMaterial();
-
-    modelViewStack.push(modelViewMatrix);
-    var s = scale4(gateTowerW/2, gateTowerW/2, 0.5);
-    var t = translate(0, 0.8 * gateTowerH, castleW + gateTowerW/2 + 0.25);
-    modelViewMatrix = mult(mult(modelViewMatrix, t), s);
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    modelViewMatrix = modelViewStack.pop();
-    gl.drawArrays(gl.TRIANGLES, 3156, 30);
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), 4);
-    gl.drawArrays(gl.TRIANGLES, 3150, 6);
-}
-
-function DrawFlag(x, z)
-{
-    lightAmbient = vec4(0.4, 0.4, 0.4, 1);
-    lightDiffuse = vec4(1, 1, 1, 1);
-    lightSpecular = vec4(1, 1, 1, 1);
-    materialAmbient = vec4(0.2, 0.2, 0.2, 1);
-    materialDiffuse = vec4(0.4, 0.4, 0.4, 1);
-    materialSpecular = vec4(0.6, 0.6, 0.6, 1);
-    materialShininess = 9;
-    SetupLightingMaterial();
-
-    modelViewStack.push(modelViewMatrix);
-    var s = scale4(20, 40, 20);
-    var r = rotate(90 + flagMov, 0, 1, 0);
-    var t = translate(x, 60, z);
-    modelViewMatrix = mult(mult(mult(modelViewMatrix, t), r), s);
-    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-    modelViewMatrix = modelViewStack.pop();
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), 3);
-    gl.drawArrays(gl.TRIANGLES, 3234, 48);
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), 5);
-    gl.drawArrays(gl.TRIANGLES, 3282, 6);
 }
 
 function scale4(a, b, c)
@@ -1182,7 +822,7 @@ function DrawCar(){
     modelViewStack.push(modelViewMatrix);
     var r= rotate(90,1,0,0);
     var t = translate(0,30,-15);
-    var s = scale4(50,20,20);
+    var s = scale4(50,18,20);
     modelViewMatrix = mult(modelViewMatrix,r);
     modelViewMatrix = mult(modelViewMatrix,t);
     modelViewMatrix = mult(modelViewMatrix,s);
