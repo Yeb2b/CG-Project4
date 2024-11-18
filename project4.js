@@ -80,6 +80,10 @@ function main()
     console.log(points.length);
     console.log(colors.length);
     GenerateHouse(vec4(1,0,0,1) );
+
+    GenerateCylinder(20,100,100, vec4(1,0,1,1)); //+1200
+    GenerateCube(8,8,vec4(0,0,1,1)); //+36
+
     //GenerateCube(8, 8,vec4(1,0,0,1)) ; //600-636 +36
     //tetrahedron(va, vb, vc, vd, 5); //+12,288
     /*
@@ -593,7 +597,8 @@ function render()
     gl.enable(gl.DEPTH_TEST); 
     DrawGround();
     //drawCylinder();
-    //DrawHouse(100, 80, 120, 0, 0,-80);
+    DrawHouse(100, 80, 120, 0, 0,-80);
+    DrawStairsAndPorch();
     //DrawBuilding(72, 80, 60, 0, 0, 70);
     //DrawTower(10, 80, 40, 40);
     //drawCone();
@@ -881,4 +886,43 @@ function DrawCar(){
     modelViewMatrix = modelViewStack.pop();
 
 
+}
+function DrawStairsAndPorch(){
+    modelViewStack.push(modelViewMatrix);
+    var t = translate(-20,0,-40);
+    var s = scale4(1,1/2,1);
+    modelViewMatrix = mult(modelViewMatrix,t);
+    modelViewMatrix = mult(modelViewMatrix,s);
+    modelViewMatrix = mult(mult(modelViewMatrix, t), s);
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+    gl.drawArrays(gl.TRIANGLES, 3960, 1200);
+    modelViewMatrix = modelViewStack.pop();
+    modelViewStack.push(modelViewMatrix);
+    var s = scale4(35, 10, 30);
+    var t = translate(-60,0,-80);
+    modelViewMatrix = mult(mult(modelViewMatrix, t), s);
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+    gl.drawArrays(gl.TRIANGLES, 5160, 36);
+    modelViewMatrix = modelViewStack.pop();
+    modelViewStack.push(modelViewMatrix);
+    var s = scale4(25, 10, 30);
+    var t = translate(-60,5,-80);
+    modelViewMatrix = mult(mult(modelViewMatrix, t), s);
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+    gl.drawArrays(gl.TRIANGLES, 5160, 36);
+    modelViewMatrix = modelViewStack.pop();
+    modelViewStack.push(modelViewMatrix);
+    var s = scale4(15, 10, 30);
+    var t = translate(-60,10,-80);
+    modelViewMatrix = mult(mult(modelViewMatrix, t), s);
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+    gl.drawArrays(gl.TRIANGLES, 5160, 36);
+    modelViewMatrix = modelViewStack.pop();
+    modelViewStack.push(modelViewMatrix);
+    var s = scale4(10, 10, 30);
+    var t = translate(-55,15,-80);
+    modelViewMatrix = mult(mult(modelViewMatrix, t), s);
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+    gl.drawArrays(gl.TRIANGLES, 5160, 36);
+    modelViewMatrix = modelViewStack.pop();
 }
